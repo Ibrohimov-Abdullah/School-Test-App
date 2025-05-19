@@ -27,7 +27,7 @@ class LoginController extends GetxController {
     if (!formKey.currentState!.validate()) return;
 
     isLoading.value = true;
-    if (emailController.text == "admin@gmail.com" && passwordController.text == "Admin123") {
+    if (emailController.text == "admin@gmail.com" && passwordController.text == "Abdulaziz2025000") {
       isLoading.value = false;
       Get.offAll(AdminDashboardScreen());
     } else {
