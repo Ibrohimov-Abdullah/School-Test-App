@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:school_test_app/core/constants/constants.dart';
+import 'package:school_test_app/features/main/view/pages/available_survay_page.dart';
 import 'package:school_test_app/features/profile/view/profile_page.dart';
 
 import '../../../main/controllers/main_controller.dart';
@@ -21,7 +22,7 @@ class MainPage extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         children: [
           StudentDashboardScreen(),
-          PlaceholderScreen(title: "So'rovnomalar"),
+          SurveysListPage(),
           ProfilePage(),
         ],
       ),

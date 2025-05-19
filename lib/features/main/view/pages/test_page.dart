@@ -4,11 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:school_test_app/core/constants/constants.dart';
+import 'package:school_test_app/features/main/view/pages/main_page.dart';
 import 'package:school_test_app/features/main/view/pages/test_result_page.dart';
 import 'package:school_test_app/features/profile/view/profile_page.dart';
-import 'package:uzpay/enums.dart';
-import 'package:uzpay/objects.dart';
-import 'package:uzpay/uzpay.dart';
 
 import '../../../themes/app_colors.dart';
 
@@ -132,54 +130,13 @@ class _TestScreenState extends State<TestScreen> {
                 child: Text('Bekor qilish'),
               ),
               TextButton(
-                onPressed: () => Get.back(result: true),
+                onPressed: () => Get.to(MainPage()),
                 child: Text('To\'ldirish'),
               ),
             ],
           ),
         );
 
-        if (result == true) {
-          // Process payment via UzPay
-          var paymentParams = Params(
-            clickParams: ClickParams(
-              transactionParam: "Balans to'ldirish",
-              merchantId: "37061",
-              serviceId: "69003",
-              merchantUserId: "53110",
-            ),
-          );
-
-          var paymentResult = await UzPay.doPayment(
-            context,
-            amount: 2000,
-            paymentSystem: PaymentSystem.Click,
-            paymentParams: paymentParams,
-            browserType: BrowserType.ExternalOrDeepLink,
-          );
-
-            // Top up balance after successful payment
-            await _firestore.collection('balances').doc(user.uid).set({
-              'amount': FieldValue.increment(2000),
-              'lastUpdated': FieldValue.serverTimestamp(),
-            }, SetOptions(merge: true));
-
-            // Record transaction
-            await _firestore.collection('transactions').add({
-              'userId': user.uid,
-              'amount': 2000,
-              'description': 'Balans to\'ldirish',
-              'paymentId': paymentResult.transactionId,
-              'createdAt': FieldValue.serverTimestamp(),
-            });
-
-            Get.snackbar('Muvaffaqiyatli', 'Balansingiz 2000 so\'mga to\'ldirildi');
-
-            // Retry the test payment
-            await _processPayment();
-          } else {
-            Get.snackbar('Xatolik', 'To\'lov amalga oshirilmadi');
-          }
         }
     } catch (e) {
       setState(() {

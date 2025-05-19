@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:school_test_app/features/admin/view/pages/location_page.dart';
 import 'package:school_test_app/features/admin/view/pages/students_result_page.dart';
+import 'package:school_test_app/features/admin/view/pages/survey_create_page.dart';
 import 'package:school_test_app/features/auth/view/pages/login_page.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
@@ -16,18 +17,31 @@ class AdminDashboardScreen extends StatelessWidget {
         title: const Text('Admin Panel'),
         actions: [IconButton(onPressed: () => Get.offAll(LoginScreen()), icon: Icon(Icons.logout))],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
+      body: Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Tumanlar',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+              "Admin bo'limiga xush kelibsiz!",
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 22.sp),
             ),
-            SizedBox(height: 16.h),
-            Expanded(
-              child: _buildDistrictsList(),
+            10.verticalSpace,
+            Text(
+              "1. Test qo'shish",
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18.sp),
+            ),
+            Text(
+              "2. Shahar, Maktab va Viloyat qo'shish",
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18.sp),
+            ),
+            Text(
+              "3. Test natijalari",
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18.sp),
+            ),
+            Text(
+              "4. Surovnoma Yaratish",
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18.sp),
             ),
           ],
         ),
@@ -36,6 +50,7 @@ class AdminDashboardScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           FloatingActionButton(
+            heroTag: "hero1",
             onPressed: () {
               Get.to(() => const CreateTestScreen());
             },
@@ -43,6 +58,7 @@ class AdminDashboardScreen extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
           FloatingActionButton(
+            heroTag: "hero2",
             onPressed: () {
               Get.to(() => const LocationManagementScreen());
             },
@@ -50,47 +66,22 @@ class AdminDashboardScreen extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
           FloatingActionButton(
+            heroTag: "hero3",
             onPressed: () {
               Get.to(() => const TestResultsScreen());
             },
             child: Icon(Icons.assessment),
           ),
+          SizedBox(height: 16.h),
+          FloatingActionButton(
+            heroTag: "hero4",
+            onPressed: () {
+              Get.to(() => const CreateSurveyPage());
+            },
+            child: Icon(Icons.add),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDistrictsList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('districts').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text('Xatolik yuz berdi: ${snapshot.error}'));
-        }
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final districts = snapshot.data!.docs;
-
-        return ListView.builder(
-          itemCount: districts.length,
-          itemBuilder: (context, index) {
-            final district = districts[index];
-            return Card(
-              child: ListTile(
-                title: Text(district['name']),
-                subtitle: Text(district['region']),
-                trailing: const Icon(Icons.arrow_forward),
-                onTap: () {
-                  Get.to(() => SchoolsScreen(districtId: district.id));
-                },
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }
@@ -341,399 +332,6 @@ class _CreateTestScreenState extends State<CreateTestScreen> {
         );
       }
     }
-  }
-}
-
-Widget _buildDistrictsList() {
-  return StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance.collection('districts').snapshots(),
-    builder: (context, snapshot) {
-      if (snapshot.hasError) {
-        return Center(child: Text('Xatolik yuz berdi: ${snapshot.error}'));
-      }
-
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      final districts = snapshot.data!.docs;
-
-      return ListView.builder(
-        itemCount: districts.length,
-        itemBuilder: (context, index) {
-          final district = districts[index];
-          return Card(
-            child: ListTile(
-              title: Text(district['name']),
-              subtitle: Text(district['region']),
-              trailing: const Icon(Icons.arrow_forward),
-              onTap: () {
-                Get.to(() => SchoolsScreen(districtId: district.id));
-              },
-            ),
-          );
-        },
-      );
-    },
-  );
-}
-
-class SchoolsScreen extends StatelessWidget {
-  final String districtId;
-
-  const SchoolsScreen({Key? key, required this.districtId}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Maktablar'),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Maktablar ro\'yxati',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16.h),
-            Expanded(
-              child: _buildSchoolsList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSchoolsList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('schools').where('districtId', isEqualTo: districtId).snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text('Xatolik yuz berdi: ${snapshot.error}'));
-        }
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final schools = snapshot.data!.docs;
-
-        return ListView.builder(
-          itemCount: schools.length,
-          itemBuilder: (context, index) {
-            final school = schools[index];
-            return Card(
-              child: ListTile(
-                title: Text(school['name']),
-                subtitle: Text(school['type']),
-                trailing: const Icon(Icons.arrow_forward),
-                onTap: () {
-                  Get.to(() => GradesScreen(schoolId: school.id));
-                },
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class GradesScreen extends StatelessWidget {
-  final String schoolId;
-
-  const GradesScreen({Key? key, required this.schoolId}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sinflar'),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Sinflar ro\'yxati',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16.h),
-            Expanded(
-              child: _buildGradesList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGradesList() {
-    // In a real app, you would fetch grades from Firestore
-    final grades = ['10-sinf', '11-sinf']; // Example grades
-
-    return ListView.builder(
-      itemCount: grades.length,
-      itemBuilder: (context, index) {
-        return Card(
-          child: ListTile(
-            title: Text(grades[index]),
-            trailing: const Icon(Icons.arrow_forward),
-            onTap: () {
-              Get.to(() => ClassesScreen(
-                    schoolId: schoolId,
-                    grade: grades[index],
-                  ));
-            },
-          ),
-        );
-      },
-    );
-  }
-}
-
-class ClassesScreen extends StatelessWidget {
-  final String schoolId;
-  final String grade;
-
-  const ClassesScreen({
-    Key? key,
-    required this.schoolId,
-    required this.grade,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('$grade guruhlari'),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Guruhlar ro\'yxati',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16.h),
-            Expanded(
-              child: _buildClassesList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildClassesList() {
-    // In a real app, you would fetch classes from Firestore
-    final classes = ['A', 'B', 'V', 'G']; // Example classes
-
-    return ListView.builder(
-      itemCount: classes.length,
-      itemBuilder: (context, index) {
-        return Card(
-          child: ListTile(
-            title: Text('$grade-${classes[index]}'),
-            trailing: const Icon(Icons.arrow_forward),
-            onTap: () {
-              Get.to(() => StudentsScreen(
-                    schoolId: schoolId,
-                    grade: grade,
-                    classLetter: classes[index],
-                  ));
-            },
-          ),
-        );
-      },
-    );
-  }
-}
-
-class StudentsScreen extends StatelessWidget {
-  final String schoolId;
-  final String grade;
-  final String classLetter;
-
-  const StudentsScreen({
-    Key? key,
-    required this.schoolId,
-    required this.grade,
-    required this.classLetter,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('$grade-$classLetter o\'quvchilari'),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'O\'quvchilar ro\'yxati',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16.h),
-            Expanded(
-              child: _buildStudentsList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStudentsList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .where('school', isEqualTo: schoolId)
-          .where('grade', isEqualTo: grade)
-          .where('class', isEqualTo: classLetter)
-          .where('role', isEqualTo: 'student')
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text('Xatolik yuz berdi: ${snapshot.error}'));
-        }
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final students = snapshot.data!.docs;
-
-        return ListView.builder(
-          itemCount: students.length,
-          itemBuilder: (context, index) {
-            final student = students[index];
-            return Card(
-              child: ListTile(
-                title: Text(student['name']),
-                subtitle: Text(student['email']),
-                trailing: const Icon(Icons.arrow_forward),
-                onTap: () {
-                  Get.to(() => StudentDetailScreen(studentId: student.id));
-                },
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class StudentDetailScreen extends StatelessWidget {
-  final String studentId;
-
-  const StudentDetailScreen({Key? key, required this.studentId}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('O\'quvchi ma\'lumotlari'),
-      ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('users').doc(studentId).get(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Xatolik yuz berdi: ${snapshot.error}'));
-          }
-
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final student = snapshot.data!;
-          final testResults = student['tests'] ?? {};
-
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: CircleAvatar(
-                    radius: 50.w,
-                    backgroundColor: Colors.blue,
-                    child: Text(
-                      student['name'].toString().substring(0, 1),
-                      style: TextStyle(fontSize: 40.sp, color: Colors.white),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16.h),
-                Center(
-                  child: Text(
-                    student['name'],
-                    style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                Center(
-                  child: Text(
-                    student['email'],
-                    style: TextStyle(fontSize: 16.sp, color: Colors.grey),
-                  ),
-                ),
-                SizedBox(height: 24.h),
-                _buildInfoCard('Maktab', student['school']),
-                _buildInfoCard('Sinf', student['grade']),
-                _buildInfoCard('Guruh', student['class']),
-                _buildInfoCard('Ro\'li', student['role']),
-                SizedBox(height: 24.h),
-                Text(
-                  'Test natijalari',
-                  style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8.h),
-                if (testResults.isEmpty) Text('Hali test topshirmagan', style: TextStyle(fontSize: 16.sp)),
-                ..._buildTestResults(testResults),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(String title, dynamic value) {
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 8.h),
-      child: ListTile(
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(value.toString()),
-      ),
-    );
-  }
-
-  List<Widget> _buildTestResults(Map<String, dynamic> testResults) {
-    return testResults.entries.map((entry) {
-      return Card(
-        margin: EdgeInsets.symmetric(vertical: 8.h),
-        child: ListTile(
-          title: Text(entry.key),
-          subtitle: Text('Natija: ${entry.value}%'),
-          trailing: const Icon(Icons.arrow_forward),
-          onTap: () {
-            // Navigate to detailed test results
-          },
-        ),
-      );
-    }).toList();
   }
 }
 

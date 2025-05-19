@@ -2,9 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:uzpay/enums.dart';
-import 'package:uzpay/objects.dart';
-import 'package:uzpay/uzpay.dart';
+
 
 class TestOffController extends GetxController {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -117,22 +115,9 @@ class TestOffController extends GetxController {
         );
 
         if (result == true) {
-          var paymentParams = Params(
-            clickParams: ClickParams(
-              transactionParam: "Balans to'ldirish",
-              merchantId: "37061",
-              serviceId: "69003",
-              merchantUserId: "53110",
-            ),
-          );
 
-          var paymentResult = await UzPay.doPayment(
-            Get.context!,
-            amount: 2000,
-            paymentSystem: PaymentSystem.Click,
-            paymentParams: paymentParams,
-            browserType: BrowserType.ExternalOrDeepLink,
-          );
+
+
 
           await firestore.collection('balances').doc(user.uid).set({
             'amount': FieldValue.increment(2000),
@@ -143,7 +128,6 @@ class TestOffController extends GetxController {
             'userId': user.uid,
             'amount': 2000,
             'description': 'Balans to\'ldirish',
-            'paymentId': paymentResult.transactionId,
             'createdAt': FieldValue.serverTimestamp(),
           });
 

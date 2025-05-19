@@ -34,17 +34,15 @@ class LocationManagementScreen extends StatelessWidget {
     );
   }
 }
+
 class MavjudMK extends StatelessWidget {
   const MavjudMK({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body:   Expanded(
-      child: buildSchoolsList(),
-    ),);
+    return buildSchoolsList();
   }
 }
-
 
 class CitiesTab extends StatelessWidget {
   final _formKey = GlobalKey<FormState>();
@@ -142,11 +140,12 @@ class CitiesTab extends StatelessWidget {
           itemCount: cities.length,
           itemBuilder: (context, index) {
             final city = cities[index];
+            final cityData = city.data() as Map<String, dynamic>;
             return Card(
               margin: EdgeInsets.only(bottom: 8.h),
               child: ListTile(
-                title: Text(city['name'], style: TextStyle(fontSize: 14.sp)),
-                subtitle: Text(city['region'], style: TextStyle(fontSize: 12.sp)),
+                title: Text(cityData['name'] ?? 'Noma\'lum', style: TextStyle(fontSize: 14.sp)),
+                subtitle: Text(cityData['region'] ?? 'Noma\'lum', style: TextStyle(fontSize: 12.sp)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -178,18 +177,17 @@ class CitiesTab extends StatelessWidget {
         });
         _nameController.clear();
         _regionController.clear();
-        Get.snackbar('Muvaffaqiyatli', 'Shahar qo\'shildi',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Muvaffaqiyatli', 'Shahar qo\'shildi', snackPosition: SnackPosition.BOTTOM);
       } catch (e) {
-        Get.snackbar('Xatolik', 'Shahar qo\'shib bo\'lmadi: $e',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Xatolik', 'Shahar qo\'shib bo\'lmadi: $e', snackPosition: SnackPosition.BOTTOM);
       }
     }
   }
 
   void _showEditCityDialog(DocumentSnapshot city) {
-    final nameController = TextEditingController(text: city['name']);
-    final regionController = TextEditingController(text: city['region']);
+    final cityData = city.data() as Map<String, dynamic>;
+    final nameController = TextEditingController(text: cityData['name'] ?? '');
+    final regionController = TextEditingController(text: cityData['region'] ?? '');
 
     Get.dialog(
       AlertDialog(
@@ -218,20 +216,15 @@ class CitiesTab extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               try {
-                await FirebaseFirestore.instance
-                    .collection('cities')
-                    .doc(city.id)
-                    .update({
+                await FirebaseFirestore.instance.collection('cities').doc(city.id).update({
                   'name': nameController.text,
                   'region': regionController.text,
                   'updatedAt': FieldValue.serverTimestamp(),
                 });
                 Get.back();
-                Get.snackbar('Muvaffaqiyatli', 'Shahar yangilandi',
-                    snackPosition: SnackPosition.BOTTOM);
+                Get.snackbar('Muvaffaqiyatli', 'Shahar yangilandi', snackPosition: SnackPosition.BOTTOM);
               } catch (e) {
-                Get.snackbar('Xatolik', 'Shaharni yangilab bo\'lmadi: $e',
-                    snackPosition: SnackPosition.BOTTOM);
+                Get.snackbar('Xatolik', 'Shaharni yangilab bo\'lmadi: $e', snackPosition: SnackPosition.BOTTOM);
               }
             },
             child: Text('Saqlash'),
@@ -252,11 +245,9 @@ class CitiesTab extends StatelessWidget {
         try {
           await FirebaseFirestore.instance.collection('cities').doc(cityId).delete();
           Get.back();
-          Get.snackbar('Muvaffaqiyatli', 'Shahar o\'chirildi',
-              snackPosition: SnackPosition.BOTTOM);
+          Get.snackbar('Muvaffaqiyatli', 'Shahar o\'chirildi', snackPosition: SnackPosition.BOTTOM);
         } catch (e) {
-          Get.snackbar('Xatolik', 'Shaharni o\'chirib bo\'lmadi: $e',
-              snackPosition: SnackPosition.BOTTOM);
+          Get.snackbar('Xatolik', 'Shaharni o\'chirib bo\'lmadi: $e', snackPosition: SnackPosition.BOTTOM);
         }
       },
     );
@@ -300,9 +291,10 @@ class DistrictsTab extends StatelessWidget {
                             border: OutlineInputBorder(),
                           ),
                           items: cities.map((city) {
+                            final cityData = city.data() as Map<String, dynamic>;
                             return DropdownMenuItem<String>(
                               value: city.id,
-                              child: Text(city['name'], style: TextStyle(fontSize: 14.sp)),
+                              child: Text(cityData['name'] ?? 'Noma\'lum', style: TextStyle(fontSize: 14.sp)),
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -391,21 +383,30 @@ class DistrictsTab extends StatelessWidget {
           itemCount: districts.length,
           itemBuilder: (context, index) {
             final district = districts[index];
+            final districtData = district.data() as Map<String, dynamic>;
             return Card(
               margin: EdgeInsets.only(bottom: 8.h),
               child: ListTile(
-                title: Text(district['name'], style: TextStyle(fontSize: 14.sp)),
+                title: Text(districtData['name'] ?? 'Noma\'lum', style: TextStyle(fontSize: 14.sp)),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(district['region'], style: TextStyle(fontSize: 12.sp)),
-                    FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance.collection('cities').doc(district['cityId']).get(),
+                    Text(districtData['region'] ?? 'Noma\'lum', style: TextStyle(fontSize: 12.sp)),
+                    FutureBuilder<DocumentSnapshot?>(
+                      future: districtData['cityId']?.toString().isNotEmpty == true
+                          ? FirebaseFirestore.instance.collection('cities').doc(districtData['cityId']).get()
+                          : null,
                       builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          return Text('Shahar: ${snapshot.data!['name']}', style: TextStyle(fontSize: 12.sp));
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Text('Shahar: Yuklanmoqda...', style: TextStyle(fontSize: 12.sp));
                         }
-                        return SizedBox();
+
+                        if (snapshot.hasError || snapshot.data == null || !snapshot.data!.exists) {
+                          return Text('Shahar: Noma\'lum', style: TextStyle(fontSize: 12.sp));
+                        }
+
+                        final cityData = snapshot.data!.data() as Map<String, dynamic>;
+                        return Text('Shahar: ${cityData['name'] ?? 'Noma\'lum'}', style: TextStyle(fontSize: 12.sp));
                       },
                     ),
                   ],
@@ -443,19 +444,18 @@ class DistrictsTab extends StatelessWidget {
         _nameController.clear();
         _regionController.clear();
         _selectedCityId = null;
-        Get.snackbar('Muvaffaqiyatli', 'Tuman qo\'shildi',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Muvaffaqiyatli', 'Tuman qo\'shildi', snackPosition: SnackPosition.BOTTOM);
       } catch (e) {
-        Get.snackbar('Xatolik', 'Tuman qo\'shib bo\'lmadi: $e',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Xatolik', 'Tuman qo\'shib bo\'lmadi: $e', snackPosition: SnackPosition.BOTTOM);
       }
     }
   }
 
   void _showEditDistrictDialog(DocumentSnapshot district) {
-    final nameController = TextEditingController(text: district['name']);
-    final regionController = TextEditingController(text: district['region']);
-    String? selectedCityId = district['cityId'];
+    final districtData = district.data() as Map<String, dynamic>;
+    final nameController = TextEditingController(text: districtData['name'] ?? '');
+    final regionController = TextEditingController(text: districtData['region'] ?? '');
+    String? selectedCityId = districtData['cityId'];
 
     Get.dialog(
       AlertDialog(
@@ -475,9 +475,10 @@ class DistrictsTab extends StatelessWidget {
                     value: selectedCityId,
                     decoration: InputDecoration(labelText: 'Shahar'),
                     items: cities.map((city) {
+                      final cityData = city.data() as Map<String, dynamic>;
                       return DropdownMenuItem<String>(
                         value: city.id,
-                        child: Text(city['name'], style: TextStyle(fontSize: 14.sp)),
+                        child: Text(cityData['name'] ?? 'Noma\'lum', style: TextStyle(fontSize: 14.sp)),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -507,21 +508,16 @@ class DistrictsTab extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               try {
-                await FirebaseFirestore.instance
-                    .collection('districts')
-                    .doc(district.id)
-                    .update({
+                await FirebaseFirestore.instance.collection('districts').doc(district.id).update({
                   'name': nameController.text,
                   'region': regionController.text,
                   'cityId': selectedCityId,
                   'updatedAt': FieldValue.serverTimestamp(),
                 });
                 Get.back();
-                Get.snackbar('Muvaffaqiyatli', 'Tuman yangilandi',
-                    snackPosition: SnackPosition.BOTTOM);
+                Get.snackbar('Muvaffaqiyatli', 'Tuman yangilandi', snackPosition: SnackPosition.BOTTOM);
               } catch (e) {
-                Get.snackbar('Xatolik', 'Tumanni yangilab bo\'lmadi: $e',
-                    snackPosition: SnackPosition.BOTTOM);
+                Get.snackbar('Xatolik', 'Tumanni yangilab bo\'lmadi: $e', snackPosition: SnackPosition.BOTTOM);
               }
             },
             child: Text('Saqlash'),
@@ -542,11 +538,9 @@ class DistrictsTab extends StatelessWidget {
         try {
           await FirebaseFirestore.instance.collection('districts').doc(districtId).delete();
           Get.back();
-          Get.snackbar('Muvaffaqiyatli', 'Tuman o\'chirildi',
-              snackPosition: SnackPosition.BOTTOM);
+          Get.snackbar('Muvaffaqiyatli', 'Tuman o\'chirildi', snackPosition: SnackPosition.BOTTOM);
         } catch (e) {
-          Get.snackbar('Xatolik', 'Tumanni o\'chirib bo\'lmadi: $e',
-              snackPosition: SnackPosition.BOTTOM);
+          Get.snackbar('Xatolik', 'Tumanni o\'chirib bo\'lmadi: $e', snackPosition: SnackPosition.BOTTOM);
         }
       },
     );
@@ -554,6 +548,7 @@ class DistrictsTab extends StatelessWidget {
 }
 
 class SchoolsTab extends StatelessWidget {
+
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
@@ -575,126 +570,139 @@ class SchoolsTab extends StatelessWidget {
                 key: _formKey,
                 child: Column(
                   children: [
-                  Text(
-                  'Yangi maktab qo\'shish',
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16.h),
-                StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance.collection('districts').snapshots(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return CircularProgressIndicator();
-                    }
-                    final districts = snapshot.data!.docs;
-                    return DropdownButtonFormField<String>(
+                    Text(
+                      'Yangi maktab qo\'shish',
+                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 16.h),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance.collection('districts').snapshots(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return CircularProgressIndicator();
+                        }
+                        final districts = snapshot.data!.docs;
+                        return DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: 'Tuman',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: districts.map((district) {
+                            final districtData = district.data() as Map<String, dynamic>;
+                            return DropdownMenuItem<String>(
+                              value: district.id,
+                              child: Text(districtData['name'] ?? 'Noma\'lum', style: TextStyle(fontSize: 14.sp)),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            _selectedDistrictId = value;
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Tumanni tanlang';
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                    ),
+                    SizedBox(height: 16.h),
+                    TextFormField(
+                      controller: _nameController,
                       decoration: InputDecoration(
-                        labelText: 'Tuman',
+                        labelText: 'Maktab nomi',
                         border: OutlineInputBorder(),
                       ),
-                      items: districts.map((district) {
-                        return DropdownMenuItem<String>(
-                          value: district.id,
-                          child: Text(district['name'], style: TextStyle(fontSize: 14.sp)),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        _selectedDistrictId = value;
-                      },
                       validator: (value) {
-                        if (value == null) {
-                          return 'Tumanni tanlang';
+                        if (value == null || value.isEmpty) {
+                          return 'Maktab nomini kiriting';
                         }
                         return null;
                       },
-                    );
-                  },
-                ),
-                SizedBox(height: 16.h),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Maktab nomi',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Maktab nomini kiriting';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16.h),
-                TextFormField(
-                  controller: _addressController,
-                  decoration: InputDecoration(
-                    labelText: 'Manzil',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Manzilni kiriting';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16.h),
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: InputDecoration(
-                    labelText: 'Telefon raqam',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Telefon raqamini kiriting';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16.h),
-                TextFormField(
-                  controller: _principalController,
-                  decoration: InputDecoration(
-                    labelText: 'Direktor FIO',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Direktor ismini kiriting';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16.h),
-                DropdownButtonFormField<String>(
-                  value: _selectedType,
-                  onChanged: (value) {
-                    _selectedType = value!;
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Maktab turi',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: ['General', 'Specialized', 'Private'].map((type) => DropdownMenuItem<String>(value: type, child: Text(type, style: TextStyle(fontSize: 14.sp),),),).toList(),),
-                  SizedBox(height: 16.h),
-                  ElevatedButton(
-                    onPressed: _addSchool,
-                    child: Text('Qo\'shish'),
-                  ),
+                    ),
+                    SizedBox(height: 16.h),
+                    TextFormField(
+                      controller: _addressController,
+                      decoration: InputDecoration(
+                        labelText: 'Manzil',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Manzilni kiriting';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16.h),
+                    TextFormField(
+                      controller: _phoneController,
+                      decoration: InputDecoration(
+                        labelText: 'Telefon raqam',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Telefon raqamini kiriting';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16.h),
+                    TextFormField(
+                      controller: _principalController,
+                      decoration: InputDecoration(
+                        labelText: 'Direktor FIO',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Direktor ismini kiriting';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16.h),
+                    DropdownButtonFormField<String>(
+                      value: _selectedType,
+                      onChanged: (value) {
+                        _selectedType = value!;
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Maktab turi',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: ['General', 'Specialized', 'Private']
+                          .map(
+                            (type) => DropdownMenuItem<String>(
+                          value: type,
+                          child: Text(
+                            type,
+                            style: TextStyle(fontSize: 14.sp),
+                          ),
+                        ),
+                      )
+                          .toList(),
+                    ),
+                    SizedBox(height: 16.h),
+                    ElevatedButton(
+                      onPressed: _addSchool,
+                      child: Text('Qo\'shish'),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
           SizedBox(height: 16.h),
-
+          Expanded(
+            child: buildSchoolsList(),
+          ),
         ],
       ),
     );
   }
-
 
   void _addSchool() async {
     if (_formKey.currentState!.validate()) {
@@ -713,17 +721,14 @@ class SchoolsTab extends StatelessWidget {
         _phoneController.clear();
         _principalController.clear();
         _selectedDistrictId = null;
-        Get.snackbar('Muvaffaqiyatli', 'Maktab qo\'shildi',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Muvaffaqiyatli', 'Maktab qo\'shildi', snackPosition: SnackPosition.BOTTOM);
       } catch (e) {
-        Get.snackbar('Xatolik', 'Maktab qo\'shib bo\'lmadi: $e',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Xatolik', 'Maktab qo\'shib bo\'lmadi: $e', snackPosition: SnackPosition.BOTTOM);
       }
     }
   }
-
-
 }
+
 Widget buildSchoolsList() {
   return StreamBuilder<QuerySnapshot>(
     stream: FirebaseFirestore.instance.collection('schools').snapshots(),
@@ -751,22 +756,24 @@ Widget buildSchoolsList() {
         itemCount: schools.length,
         itemBuilder: (context, index) {
           final school = schools[index];
+          final schoolData = school.data() as Map<String, dynamic>;
           return Card(
             margin: EdgeInsets.only(bottom: 8.h),
             child: ListTile(
-              title: Text(school['name'], style: TextStyle(fontSize: 14.sp)),
+              title: Text(schoolData['name'] ?? 'Noma\'lum', style: TextStyle(fontSize: 14.sp)),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(school['address'], style: TextStyle(fontSize: 12.sp)),
-                  Text(school['type'], style: TextStyle(fontSize: 12.sp)),
+                  Text(schoolData['address'] ?? 'Noma\'lum', style: TextStyle(fontSize: 12.sp)),
+                  Text(schoolData['type'] ?? 'Noma\'lum', style: TextStyle(fontSize: 12.sp)),
                   FutureBuilder<DocumentSnapshot>(
-                    future: FirebaseFirestore.instance.collection('districts').doc(school['districtId']).get(),
+                    future: FirebaseFirestore.instance.collection('districts').doc(schoolData['districtId'] ?? '').get(),
                     builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return Text('Tuman: ${snapshot.data!['name']}', style: TextStyle(fontSize: 12.sp));
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final districtData = snapshot.data!.data() as Map<String, dynamic>;
+                        return Text('Tuman: ${districtData['name'] ?? 'Noma\'lum'}', style: TextStyle(fontSize: 12.sp));
                       }
-                      return SizedBox();
+                      return Text('Tuman: Noma\'lum', style: TextStyle(fontSize: 12.sp));
                     },
                   ),
                 ],
@@ -791,13 +798,15 @@ Widget buildSchoolsList() {
     },
   );
 }
+
 void _showEditSchoolDialog(DocumentSnapshot school) {
-  final nameController = TextEditingController(text: school['name']);
-  final addressController = TextEditingController(text: school['address']);
-  final phoneController = TextEditingController(text: school['contactPhone']);
-  final principalController = TextEditingController(text: school['principalName']);
-  String? selectedDistrictId = school['districtId'];
-  String selectedType = school['type'];
+  final schoolData = school.data() as Map<String, dynamic>;
+  final nameController = TextEditingController(text: schoolData['name'] ?? '');
+  final addressController = TextEditingController(text: schoolData['address'] ?? '');
+  final phoneController = TextEditingController(text: schoolData['contactPhone'] ?? '');
+  final principalController = TextEditingController(text: schoolData['principalName'] ?? '');
+  String? selectedDistrictId = schoolData['districtId'];
+  String selectedType = schoolData['type'] ?? 'General';
 
   Get.dialog(
     AlertDialog(
@@ -817,9 +826,10 @@ void _showEditSchoolDialog(DocumentSnapshot school) {
                   value: selectedDistrictId,
                   decoration: InputDecoration(labelText: 'Tuman'),
                   items: districts.map((district) {
+                    final districtData = district.data() as Map<String, dynamic>;
                     return DropdownMenuItem<String>(
                       value: district.id,
-                      child: Text(district['name'], style: TextStyle(fontSize: 14.sp)),
+                      child: Text(districtData['name'] ?? 'Noma\'lum', style: TextStyle(fontSize: 14.sp)),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -874,10 +884,7 @@ void _showEditSchoolDialog(DocumentSnapshot school) {
         ElevatedButton(
           onPressed: () async {
             try {
-              await FirebaseFirestore.instance
-                  .collection('schools')
-                  .doc(school.id)
-                  .update({
+              await FirebaseFirestore.instance.collection('schools').doc(school.id).update({
                 'name': nameController.text,
                 'address': addressController.text,
                 'contactPhone': phoneController.text,
@@ -887,11 +894,9 @@ void _showEditSchoolDialog(DocumentSnapshot school) {
                 'updatedAt': FieldValue.serverTimestamp(),
               });
               Get.back();
-              Get.snackbar('Muvaffaqiyatli', 'Maktab yangilandi',
-                  snackPosition: SnackPosition.BOTTOM);
+              Get.snackbar('Muvaffaqiyatli', 'Maktab yangilandi', snackPosition: SnackPosition.BOTTOM);
             } catch (e) {
-              Get.snackbar('Xatolik', 'Maktabni yangilab bo\'lmadi: $e',
-                  snackPosition: SnackPosition.BOTTOM);
+              Get.snackbar('Xatolik', 'Maktabni yangilab bo\'lmadi: $e', snackPosition: SnackPosition.BOTTOM);
             }
           },
           child: Text('Saqlash'),
@@ -912,11 +917,9 @@ void _deleteSchool(String schoolId) async {
       try {
         await FirebaseFirestore.instance.collection('schools').doc(schoolId).delete();
         Get.back();
-        Get.snackbar('Muvaffaqiyatli', 'Maktab o\'chirildi',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Muvaffaqiyatli', 'Maktab o\'chirildi', snackPosition: SnackPosition.BOTTOM);
       } catch (e) {
-        Get.snackbar('Xatolik', 'Maktabni o\'chirib bo\'lmadi: $e',
-            snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Xatolik', 'Maktabni o\'chirib bo\'lmadi: $e', snackPosition: SnackPosition.BOTTOM);
       }
     },
   );
